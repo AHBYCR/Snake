@@ -1,4 +1,7 @@
 import random
+import time
+import threading
+from queue import Queue
 
 
 class Const:
@@ -110,6 +113,24 @@ class Snake:
         return self.map_obj.update(update_content)
 
 
+class SnakeController(threading.Thread):
+    def __init__(self, snake, direction_queue):
+        super().__init__()
+        self.snake = snake
+        self.direction_queue = direction_queue
+        self.running = True
+
+    def run(self):
+        while self.running:
+            toward = self.direction_queue.get()
+            if toward is not None:
+                res = self.snake.move(toward)
+                if res != GameState.gameRunning:
+                    print(res)
+                    self.running = False
+            time.sleep(0.5)  # Adjust the speed of the snake's movement
+
+
 def keyboard_reflect(key: str) -> tuple[int]:
     refl = {
         'w': (-1, 0),
@@ -128,19 +149,65 @@ def main():
     m = create_map(4)
     s = Snake((0, 0), m)
     m.beanCreate()
-    
+
+    direction_queue = Queue()
+    direction_queue.put((1, 0))
+    controller = SnakeController(s, direction_queue)
+    controller.start()
+
     while True:
         print(m)
-        while (toward := keyboard_reflect(input('to'))) is None: pass
-        
-        res = s.move(toward)
+        key = input('to')
+        toward = keyboard_reflect(key)
+        direction_queue.put(toward)
+
+        if key.lower() == 'q':
+            controller.running = False
+            controller.join()
+            break
+
         if not m.isExist(Const.bean):
             res = m.beanCreate()
-        
+
         if res != GameState.gameRunning:
             print(res)
             break
-        
+
+def test():
+    import keyboard  # 导入keyboard库
+
+
+    def main_keyboard_monitering():
+        m = create_map(4)
+        s = Snake((0, 0), m)
+        m.beanCreate()
+
+        direction_queue = Queue()
+        controller = SnakeController(s, direction_queue)
+        controller.start()
+
+        while True:
+            print(m)
+            try:
+                key_event = keyboard.read_event()
+                if key_event.event_type == keyboard.KEY_DOWN:
+                    key = key_event.name
+                    toward = keyboard_reflect(key)
+                    direction_queue.put(toward)
+            except KeyboardInterrupt:
+                break
+
+            if not m.isExist(Const.bean):
+                res = m.beanCreate()
+
+            if res != GameState.gameRunning:
+                print(res)
+                break
+            
+    main_keyboard_monitering()
+
 if __name__ == '__main__':
     main()
     print('end')
+    
+    
