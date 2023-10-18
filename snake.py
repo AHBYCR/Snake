@@ -2,6 +2,7 @@ import random
 import time
 import threading
 from queue import Queue
+import keyboard  # 导入keyboard库
 
 
 class Const:
@@ -151,19 +152,18 @@ def main():
     m.beanCreate()
 
     direction_queue = Queue()
-    direction_queue.put((1, 0))
     controller = SnakeController(s, direction_queue)
     controller.start()
 
     while True:
         print(m)
-        key = input('to')
-        toward = keyboard_reflect(key)
-        direction_queue.put(toward)
-
-        if key.lower() == 'q':
-            controller.running = False
-            controller.join()
+        try:
+            key_event = keyboard.read_event()
+            if key_event.event_type == keyboard.KEY_DOWN:
+                key = key_event.name
+                toward = keyboard_reflect(key)
+                direction_queue.put(toward)
+        except KeyboardInterrupt:
             break
 
         if not m.isExist(Const.bean):
@@ -171,41 +171,8 @@ def main():
 
         if res != GameState.gameRunning:
             print(res)
-            break
-
-def test():
-    import keyboard  # 导入keyboard库
-
-
-    def main_keyboard_monitering():
-        m = create_map(4)
-        s = Snake((0, 0), m)
-        m.beanCreate()
-
-        direction_queue = Queue()
-        controller = SnakeController(s, direction_queue)
-        controller.start()
-
-        while True:
-            print(m)
-            try:
-                key_event = keyboard.read_event()
-                if key_event.event_type == keyboard.KEY_DOWN:
-                    key = key_event.name
-                    toward = keyboard_reflect(key)
-                    direction_queue.put(toward)
-            except KeyboardInterrupt:
-                break
-
-            if not m.isExist(Const.bean):
-                res = m.beanCreate()
-
-            if res != GameState.gameRunning:
-                print(res)
                 break
             
-    main_keyboard_monitering()
-
 if __name__ == '__main__':
     main()
     print('end')
