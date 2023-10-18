@@ -2,7 +2,6 @@ import random
 import time
 import threading
 from queue import Queue
-import keyboard  # 导入keyboard库
 
 
 class Const:
@@ -16,8 +15,9 @@ class GameState:
     crashWall = 'You crashed onto wall!'
     mapFull = 'You Win!'
     gameRunning = 'The game still not end'
+    flag = gameRunning
 
-
+ 
 class SnakeMap(list):
     def get(self, position: tuple[int, int]) -> any:
         """
@@ -29,7 +29,13 @@ class SnakeMap(list):
         """
         x, y = position
         return self[x][y]
-
+    
+    def __contains__(self, position: int):
+        x, y = position
+        if any((i not in range(len(self))) for i in (x, y)):
+            return False
+        return True
+    
     def isExist(self, target: any) -> bool:
         """
         寻找是否存在target元素于地图(map)中
@@ -50,11 +56,12 @@ class SnakeMap(list):
         for (x, y), rep in changes.items():
             # 是否超出地图
             if any(i not in range(len(self)) for i in (x, y)):
-                return GameState.crashWall
+                GameState.flag = GameState.crashWall
+                return 
             # 替换内容
             self[x][y] = rep
-        return GameState.gameRunning
-
+        GameState.flag = GameState.gameRunning
+    
     def beanCreate(self) -> bool:
         """
         随机创建豆子, 成功/失败 为 T/F
@@ -63,16 +70,17 @@ class SnakeMap(list):
         # 推导存在空格地板的行
         line_indexes = [line for line in self if Const.floor in line]
         # 行存在
-        while line_indexes:
+        if line_indexes:
             # 抽取随机行
             random_line = random.choice(line_indexes)
             # 内容为地板的下标
             floor_indexes = [idx for idx, item in enumerate(random_line) if item == Const.floor]
             # 抽取地板替换为豆子
             random_line[random.choice(floor_indexes)] = Const.bean
-            return GameState.gameRunning
-        return GameState.mapFull
-
+            GameState.flag = GameState.gameRunning
+        else:
+            GameState.flag = GameState.mapFull
+    
     def __str__(self):
         string = ''
         for line in self:
@@ -80,28 +88,30 @@ class SnakeMap(list):
                 string += item + ' '
             string += '\n'
         return string
-
-
+        
+        
 class Snake:
     def __init__(self, spawn: tuple[int], map_obj: SnakeMap):
         self.body = [spawn]
         self.map_obj = map_obj
         self.map_obj.update({spawn: Const.snakeBody})
-
+        
     def move(self, toward: tuple[int, int]) -> bool:
         """
         蛇的移动方法，传入方向以移动
         :param toward: 传入移动方向, 
                 example: 向下(1, 0)
-        :type toward: tuple[int]
+        :type toward: tuple[int, int]
         :rtype: bool
         """
         # 计算新旧位置
         pos = self.body[-1]
         new_pos = tuple(toward[i] + j for i, j in enumerate(pos))
-        # 判断是否撞上自己
+        # 判断是否撞上自己 / 墙壁
         if new_pos in self.body:
             return GameState.crashSelf
+        elif new_pos not in self.map_obj:
+            return GameState.crashWall
         # 实现自身移动
         update_content = {new_pos: Const.snakeBody}
         if self.map_obj.get(new_pos) != Const.bean:
@@ -111,7 +121,7 @@ class Snake:
         # 增头
         self.body.append(new_pos)
         # 返回地图更新结果
-        return self.map_obj.update(update_content)
+        self.map_obj.update(update_content)
 
 
 class SnakeController(threading.Thread):
@@ -119,18 +129,14 @@ class SnakeController(threading.Thread):
         super().__init__()
         self.snake = snake
         self.direction_queue = direction_queue
-        self.running = True
 
     def run(self):
-        while self.running:
+        while GameState.flag == GameState.gameRunning:
             toward = self.direction_queue.get()
             if toward is not None:
-                res = self.snake.move(toward)
-                if res != GameState.gameRunning:
-                    print(res)
-                    self.running = False
+                self.snake.move(toward)
             time.sleep(0.5)  # Adjust the speed of the snake's movement
-
+        print(GameState.flag)
 
 def keyboard_reflect(key: str) -> tuple[int]:
     refl = {
@@ -149,11 +155,11 @@ def create_map(edge_len: int) -> SnakeMap[list[any]]:
 def main():
     m = create_map(4)
     s = Snake((0, 0), m)
-    m.beanCreate()
 
     direction_queue = Queue()
     controller = SnakeController(s, direction_queue)
     controller.start()
+    direction_queue.put((1, 0))
 
     while True:
         print(m)
@@ -165,14 +171,17 @@ def main():
                 direction_queue.put(toward)
         except KeyboardInterrupt:
             break
-
+        
         if not m.isExist(Const.bean):
-            res = m.beanCreate()
+            m.beanCreate()
 
-        if res != GameState.gameRunning:
-            print(res)
-                break
+        if GameState.flag != GameState.gameRunning:
+            print(GameState.flag)
+            controller.join()
+            break
 
 if __name__ == '__main__':
     main()
     print('end')
+    
+    
