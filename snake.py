@@ -122,6 +122,7 @@ class Snake:
         self.body.append(new_pos)
         # 返回地图更新结果
         self.map_obj.update(update_content)
+        return GameState.gameRunning
 
 
 class SnakeController(threading.Thread):
@@ -134,8 +135,8 @@ class SnakeController(threading.Thread):
         while GameState.flag == GameState.gameRunning:
             toward = self.direction_queue.get()
             if toward is not None:
-                self.snake.move(toward)
-            time.sleep(0.5)  # Adjust the speed of the snake's movement
+                GameState.flag = self.snake.move(toward)
+            time.sleep(0.5)
         print(GameState.flag)
 
 def keyboard_reflect(key: str) -> tuple[int]:
