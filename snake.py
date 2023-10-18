@@ -9,14 +9,14 @@ class Const:
     floor = '0'
     snakeBody = '#'
     bean = '*'
-    
-    
+
+
 class GameState:
     crashSelf = 'You crashed onto yourself!'
     crashWall = 'You crashed onto wall!'
     mapFull = 'You Win!'
     gameRunning = 'The game still not end'
-    
+
 
 class SnakeMap(list):
     def get(self, position: tuple[int, int]) -> any:
@@ -29,7 +29,7 @@ class SnakeMap(list):
         """
         x, y = position
         return self[x][y]
-    
+
     def isExist(self, target: any) -> bool:
         """
         寻找是否存在target元素于地图(map)中
@@ -54,7 +54,7 @@ class SnakeMap(list):
             # 替换内容
             self[x][y] = rep
         return GameState.gameRunning
-    
+
     def beanCreate(self) -> bool:
         """
         随机创建豆子, 成功/失败 为 T/F
@@ -72,7 +72,7 @@ class SnakeMap(list):
             random_line[random.choice(floor_indexes)] = Const.bean
             return GameState.gameRunning
         return GameState.mapFull
-    
+
     def __str__(self):
         string = ''
         for line in self:
@@ -80,14 +80,14 @@ class SnakeMap(list):
                 string += item + ' '
             string += '\n'
         return string
-        
-        
+
+
 class Snake:
     def __init__(self, spawn: tuple[int], map_obj: SnakeMap):
         self.body = [spawn]
         self.map_obj = map_obj
         self.map_obj.update({spawn: Const.snakeBody})
-        
+
     def move(self, toward: tuple[int, int]) -> bool:
         """
         蛇的移动方法，传入方向以移动
@@ -172,9 +172,7 @@ def main():
         if res != GameState.gameRunning:
             print(res)
                 break
-            
+
 if __name__ == '__main__':
     main()
     print('end')
-    
-    
