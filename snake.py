@@ -1,6 +1,7 @@
 import random
 import time
 import threading
+import keyboard
 from queue import Queue
 
 
@@ -177,7 +178,6 @@ def main():
             m.beanCreate()
 
         if GameState.flag != GameState.gameRunning:
-            print(GameState.flag)
             controller.join()
             break
 
