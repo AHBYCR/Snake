@@ -88,7 +88,7 @@ class SnakeMap(list):
         string = ""
         for line in self:
             for item in line:
-                string += item + " "
+                string += item + ""
             string += "\n"
         return string
 
@@ -143,7 +143,12 @@ class SnakeController(threading.Thread):
 
 
 def keyboard_reflect(key: str) -> tuple[int]:
-    refl = {"w": (-1, 0), "a": (0, -1), "s": (1, 0), "d": (0, 1)}
+    refl = {
+        "w": (-1, 0), 
+        "a": (0, -1), 
+        "s": (1, 0), 
+        "d": (0, 1)
+            }
     # 方向的键盘映射
     ret = refl.get(key.lower(), None)
     return ret
